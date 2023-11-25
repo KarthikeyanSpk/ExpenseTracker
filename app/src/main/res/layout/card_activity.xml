@@ -12,21 +12,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardCornerRadius="10dp"
-            android:layout_margin="5dp"
+            android:layout_margin="6dp"
             app:cardElevation="8dp"
             app:cardBackgroundColor="@color/design_default_color_secondary_variant">
 
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="10dp">
+                android:padding="12dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:id="@+id/msgBlock"
                     android:textColor="@color/design_default_color_background"
-                    android:textSize="10dp"
+                    android:textSize="10sp"
                     android:layout_centerInParent="true"/>
 
             </RelativeLayout>

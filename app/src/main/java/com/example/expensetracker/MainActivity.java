@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -14,12 +13,18 @@ import android.os.Bundle;
 import androidx.core.app.ActivityCompat;
 
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
+
 
 public class MainActivity extends AppCompatActivity {
 
-    private final String[] debitKeywords = new String[]{"debited","withdrawn","spent","w/d","Money Transfer"};
+    private final String[] debitKeywords = new String[]{"debited","withdrawn","spent"," w/d ","Money Transfer"};
     private final String[] creditKeywords = new String[]{"credited"};
+
+    private final String[] ignoreKeywords = new String[]{"rummy","RummyCircle","failed","OTP","requested money","Swiggy Money"};
+
 
     private Button load;
     private LinearLayout layout;
@@ -29,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+//        Get SMS permission for the first time, the app is launched
         ActivityCompat.requestPermissions ( this,
                 new String[] {Manifest.permission.READ_SMS},
                 PackageManager.PERMISSION_GRANTED);
@@ -39,38 +45,47 @@ public class MainActivity extends AppCompatActivity {
         load.setOnClickListener(this::loadsms);
     }
 
-    private void addCard(String sms) {
+    private void addCard(Expense expense) {
         View cardView = getLayoutInflater().inflate(R.layout.card_activity,null);
         TextView smsview = cardView.findViewById(R.id.msgBlock);
-        smsview.setText(sms);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd");
+        String formattedDate = dateFormat.format(expense.getDate());
+        smsview.setText(String.format("%s -> \t%s\t\t%s",formattedDate, expense.getModeOfPayment(), expense.getAmount()));
+        layout.addView(cardView);
+    }
+
+    private void addCard(String message) {
+        View cardView = getLayoutInflater().inflate(R.layout.card_activity,null);
+        TextView smsview = cardView.findViewById(R.id.msgBlock);
+        smsview.setText(message);
         layout.addView(cardView);
     }
 
 
-
     private void loadsms(View view) {
         Cursor cursor = getContentResolver().query(Uri.parse("content://sms"),null, null,null, null);
-        cursor.moveToFirst();
 
         addCard("======= Amount spent ========");
-        while(!cursor.isAfterLast()){
-            String sms = cursor.getString(12);
-            if(Arrays.stream(debitKeywords).anyMatch(sms::contains)){
-                addCard(sms);
-            }
-            cursor.moveToNext();
-        }
-        addCard("======= Amount Credited ========");
+        createExpenseCard(cursor, debitKeywords);
 
+        addCard("======= Amount Credited ========");
+        createExpenseCard(cursor, creditKeywords);
+    }
+
+    private void createExpenseCard(Cursor cursor, String[] keywords) {
         cursor.moveToFirst();
         while(!cursor.isAfterLast()){
-            String sms = cursor.getString(12);
-            if(Arrays.stream(creditKeywords).anyMatch(sms::contains)){
-                addCard(sms);
+            String sms = cursor.getString(cursor.getColumnIndex("body"));
+            Date date = new Date(cursor.getLong(cursor.getColumnIndex("date")));
+
+            if(Arrays.stream(keywords).anyMatch(sms::contains) && Arrays.stream(ignoreKeywords).noneMatch(sms::contains)){
+                System.out.println(sms);
+                Expense expense = Expense.fromSms(sms);
+                expense.setDate(date);
+                addCard(expense);
             }
             cursor.moveToNext();
         }
-
-
     }
+
 }
